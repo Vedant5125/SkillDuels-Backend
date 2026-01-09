@@ -1,4 +1,4 @@
-const Quiz = require('../models/Quiz'); //
+import Quiz from '../models/Quiz'; //
 
 // @desc    Add a new question
 // @route   POST /api/admin/questions

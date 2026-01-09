@@ -24,11 +24,11 @@ const generateAccessAndRefreshTokens = async(userId) =>{
 }
 
 const registerUser = async (req, res) => {
-    const { email, password, fullname } = req.body;
+    const { email, password, fullname, role } = req.body;
 
     try {
 
-        if ([fullname, email, password].some((field) => field?.trim() === "")) {
+        if ([fullname, email, password, role].some((field) => field?.trim() === "")) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -41,6 +41,7 @@ const registerUser = async (req, res) => {
             fullname,
             email,
             password,
+            role,
             xp: 0,
             rank: "Novice"
         });

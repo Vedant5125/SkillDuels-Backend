@@ -7,12 +7,11 @@ class BattleEngine {
   initializeMatch(matchId, p1Id, p2Id, quizData) {
     this.activeMatches.set(matchId, {
       players: {
-        [p1Id]: { score: 0, accuracy: 0, completed: false },
-        [p2Id]: { score: 0, accuracy: 0, completed: false }
+        [p1Id]: { score: 0, completed: false },
+        [p2Id]: { score: 0, completed: false }
       },
       quizData,
-      startTime: Date.now(),
-      status: 'active'
+      startTime: Date.now()
     });
   }
 
@@ -22,16 +21,17 @@ class BattleEngine {
 
     const player = match.players[userId];
     if (isCorrect) {
-      // Logic: Faster answers with high accuracy yield more points
+      // Logic: Faster answers yield speed bonuses
       const speedBonus = Math.max(0, 10 - (timeTaken / 1000));
       player.score += Math.round(10 + speedBonus); 
     }
-    return { currentScore: player.score, opponentId: this.getOpponentId(match, userId) };
-  }
-
-  getOpponentId(match, userId) {
-    return Object.keys(match.players).find(id => id !== userId);
+    
+    return { 
+      currentScore: player.score, 
+      opponentId: Object.keys(match.players).find(id => id !== userId) 
+    };
   }
 }
 
-module.exports = new BattleEngine();
+// Export as a singleton instance
+export default new BattleEngine();

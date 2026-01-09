@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
 
     },
+    role:{
+        type: String,
+        enum: ['player', 'host'],
+        default: 'player',
+    },
     xp: { 
         type: Number,
         default: 0

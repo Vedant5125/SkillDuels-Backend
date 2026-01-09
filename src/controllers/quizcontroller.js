@@ -1,32 +1,61 @@
-import Quiz from '../models/Quiz';
+const Quiz = require('../models/Quiz'); //
 
-// 1. This grabs 5 random questions from our ONLY category
-const getBattleQuestions = async (req, res) => {
-  try {
-    // We just ask the database to give us 5 random items from the collection
-    const questions = await Quiz.aggregate([
-      { $sample: { size: 5 } } 
-    ]);
+// @desc    Add a new question
+// @route   POST /api/admin/questions
+exports.addQuestion = async (req, res) => {
+    try {
+        const { category, questionText, options, correctAnswer, difficulty } = req.body;
 
-    if (questions.length === 0) {
-      return res.status(404).json({ message: "The toy box is empty! Add questions first." });
+        // Validation: Ensure correctAnswer is one of the options
+        if (!options.includes(correctAnswer)) {
+            return res.status(400).json({ message: "Correct answer must match one of the options." });
+        }
+
+        const question = await Quiz.create({
+            category,
+            questionText,
+            options,
+            correctAnswer,
+            difficulty
+        });
+
+        res.status(201).json({ success: true, data: question });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
-
-    res.status(200).json(questions);
-  } catch (error) {
-    res.status(500).json({ message: "The robot tripped while grabbing questions!" });
-  }
 };
 
-// 2. This is for the Boss (Admin) to add questions to that one category
-const addQuestion = async (req, res) => {
-  try {
-    const newQuestion = new Quiz(req.body);
-    await newQuestion.save();
-    res.status(201).json({ message: 'Added a new question to the box!' });
-  } catch (error) {
-    res.status(400).json({ message: 'Something is wrong with this question!' });
-  }
+// @desc    Update existing question
+// @route   PUT /api/admin/questions/:id
+exports.updateQuestion = async (req, res) => {
+    try {
+        let question = await Quiz.findById(req.params.id);
+
+        if (!question) {
+            return res.status(404).json({ message: "Question not found" });
+        }
+
+        // Manipulation: Merge existing data with updates
+        question = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+
+        res.status(200).json({ success: true, data: question });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
 
-module.exports = { getBattleQuestions, addQuestion };
+// @desc    Delete a question (Admin only)
+// @route   DELETE /api/admin/questions/:id
+exports.deleteQuestion = async (req, res) => {
+    try {
+        const question = await Quiz.findByIdAndDelete(req.params.id);
+        if (!question) return res.status(404).json({ message: "Not found" });
+        
+        res.status(200).json({ success: true, message: "Question deleted" });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};

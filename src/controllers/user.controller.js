@@ -149,14 +149,14 @@ const refreshAccessToken = async(req, res) =>{
             secure:true
         }
     
-        const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id);
+        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id);
     
         return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newRefreshToken, options)
+        .cookie("refreshToken", refreshToken, options)
         .json({
-            data: accessToken, newRefreshToken,
+            data: accessToken, refreshToken,
             message: "Access and refreshed "
         })
     } catch (error) {

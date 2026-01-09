@@ -1,4 +1,4 @@
-const Quiz = require('../models/Quiz');
+import Quiz from '../models/Quiz';
 
 // Show all the groups of questions (Technical, Aptitude, etc.)
 const getCategories = async (req, res) => {
@@ -10,6 +10,7 @@ const getCategories = async (req, res) => {
   }
 };
 
+// This is for the Boss (Admin) to add new questions
 const addQuestion = async (req, res) => {
   try {
     const newQuestion = new Quiz(req.body);

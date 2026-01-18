@@ -180,10 +180,24 @@ const getUser = async (req, res) =>{
     }
 }
 
+const getLeaderboard = async (req, res) => {
+    try {
+        const topPlayers = await User.find()
+            .sort({ xp: -1 }) // Highest XP first
+            .limit(10)
+            .select("fullname xp rank stats.wins");
+        
+        return res.status(200).json({ success: true, data: topPlayers });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
-    getUser
+    getUser,
+    getLeaderboard
 }

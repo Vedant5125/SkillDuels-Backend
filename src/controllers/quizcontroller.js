@@ -1,8 +1,8 @@
-import Quiz from '../models/Quiz'; //
+import Quiz from '../models/quiz.model.js'; //
 
 // @desc    Add a new question
 // @route   POST /api/admin/questions
-exports.addQuestion = async (req, res) => {
+export const addQuestion = async (req, res) => {
     try {
         const { category, questionText, options, correctAnswer, difficulty } = req.body;
 
@@ -25,9 +25,24 @@ exports.addQuestion = async (req, res) => {
     }
 };
 
+export const getBattleQuestions = async (req, res) => {
+    try {
+        const { category } = req.query;
+        // Fetch 5 random questions from the category
+        const questions = await Quiz.aggregate([
+            { $match: { category: category || "other" } },
+            { $sample: { size: 5 } }
+        ]);
+
+        res.status(200).json({ success: true, data: questions });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 // @desc    Update existing question
 // @route   PUT /api/admin/questions/:id
-exports.updateQuestion = async (req, res) => {
+export const updateQuestion = async (req, res) => {
     try {
         let question = await Quiz.findById(req.params.id);
 
@@ -49,7 +64,7 @@ exports.updateQuestion = async (req, res) => {
 
 // @desc    Delete a question (Admin only)
 // @route   DELETE /api/admin/questions/:id
-exports.deleteQuestion = async (req, res) => {
+export const deleteQuestion = async (req, res) => {
     try {
         const question = await Quiz.findByIdAndDelete(req.params.id);
         if (!question) return res.status(404).json({ message: "Not found" });

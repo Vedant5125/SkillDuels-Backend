@@ -1,26 +1,54 @@
 // socket/battleHandler.js
 import BattleEngine from '../services/BattleEngine.js';
 import QueueManager from '../services/QueueManager.js';
-import Quiz from '../models/Quiz.js'; // As requested
+import Quiz from '../models/quiz.model.js';
 
 export default (io, socket) => {
   // 1. joinQueue: User enters a category pool
-  socket.on('joinQueue', async ({ category }) => {
-    const opponent = QueueManager.addToQueue(category, socket.id, socket.userId);
+
+  socket.on('joinQueue', async (data) => {
+    // 1. Debug Log: See what is actually arriving
+    console.log("Full data received from client:", data);
+
+    // 2. Safely extract data
+    const category = data?.category;
+    const userId = data?.userId || socket.userId;
+
+    if (!category || !userId) {
+      console.log(`Missing Data - Category: ${category}, User: ${userId}`);
+      return;
+    }
+
+    console.log(`Processing: User ${userId} for ${category}`);
+    
+    const opponent = QueueManager.addToQueue(category, socket.id, userId);
     
     if (opponent) {
-      const matchId = `match_${Date.now()}`;
+      console.log("Match Found logic executing...");
       
-      // Fetching specific quiz data from MongoDB
+      const matchId = `match_${Date.now()}`;
+
+      // 1. Force both sockets to join a specific Room
+      socket.join(matchId);
+      const opponentSocket = io.sockets.sockets.get(opponent.socketId);
+      if (opponentSocket) {
+        opponentSocket.join(matchId);
+      }
+
+      // 2. Fetch quiz data (ensure category matches your DB)
       const quizData = await Quiz.find({ category }).limit(20);
       
-      // 2. matchFound: Pair players and send data
-      io.to(socket.id).to(opponent.socketId).emit('matchFound', { matchId, quizData });
-      
-      BattleEngine.initializeMatch(matchId, socket.userId, opponent.userId, quizData);
-      
-      // 3. startTimer: Sync countdown
-      io.to(matchId).emit('startTimer', { duration: 300 }); 
+      console.log(`Sending matchFound to room ${matchId} with ${quizData.length} questions`);
+
+      // 3. Emit the event to the entire room (Both Players)
+      io.to(matchId).emit('matchFound', { 
+        matchId, 
+        opponentId: opponent.userId, 
+        quizData 
+      });
+
+      // 4. Initialize the engine for scoring
+      BattleEngine.initializeMatch(matchId, userId, opponent.userId, quizData);
     }
   });
 

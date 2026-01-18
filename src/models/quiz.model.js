@@ -4,9 +4,9 @@ const quizSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
-        enum: ["technical", "aptitude", "logical", "other"],
+        enum: ["technical", "aptitude", "logical", "General Knowledge", "other"],
     },
-    questionText: { 
+    question: { 
         type: String, 
         required: true
     },

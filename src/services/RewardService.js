@@ -1,7 +1,9 @@
+import Battle from "../models/battle.model.js";
 import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
 const updatePlayerStats = async (results) => {
-    const { winnerId, p1, p2 } = results;
+    const { winnerId, p1, p2, category } = results;
 
     if (winnerId && winnerId !== "draw") {
         // 1. Award XP to Winner
@@ -29,6 +31,27 @@ const updatePlayerStats = async (results) => {
         await User.updateMany({ _id: { $in: [p1.id, p2.id] } }, {
             $inc: { "stats.gamesPlayed": 1, xp: 10 }
         });
+
+    }
+    
+    try {
+    // This creates the record your Profile page is looking for
+        if (!p1.id || !p2.id) throw new Error("Missing Player IDs");
+
+        const historyRecord = await Battle.create({
+            players: [
+                { user: new mongoose.Types.ObjectId(p1.id), score: p1.score },
+                { user: new mongoose.Types.ObjectId(p2.id), score: p2.score }
+            ],
+            winner: winnerId === "draw" ? null : new mongoose.Types.ObjectId(winnerId),
+            category: category || "General Knowledge", // Required field fallback
+            status: "completed",
+            xpAwarded: 50,
+            playedAt: new Date()
+        });
+        console.log("✅ Battle saved to Atlas successfully", historyRecord._id);
+    } catch (error) {
+        console.error("❌ Atlas Save Error:", error.message);
     }
 };
 

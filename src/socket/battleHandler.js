@@ -44,14 +44,16 @@ export default (io, socket) => {
       
 
       // 3. Emit the event to the entire room (Both Players)
-      io.to(matchId).emit('matchFound', { 
-        matchId, 
-        opponentId: opponent.userId, 
-        quizData 
-      });
+      // io.to(matchId).emit('matchFound', { 
+      //   matchId, 
+      //   opponentId: opponent.userId, 
+      //   quizData 
+      // });
 
       // 4. Initialize the engine for scoring
-      BattleEngine.initializeMatch(matchId, userId, opponent.userId.toString(), quizData);
+      // BattleEngine.initializeMatch(matchId, userId, opponent.userId.toString(), quizData);
+      BattleEngine.initializeMatch(matchId, userId, opponent.userId, quizData, category);
+      io.to(matchId).emit('matchFound', { matchId, opponentId: opponent.userId, quizData });
     }
   });
 
@@ -70,9 +72,16 @@ export default (io, socket) => {
 
   // 6. endMatch: Declare winner and award badges/XP
   socket.on('endMatch', async ({ matchId }) => {
+    console.log(`EndMatch received for: ${matchId}`);
     const results = BattleEngine.getFinalResults(matchId);
-    if (!results) return;
+    if (!results) {
+      console.log("❌ Failed to get results from BattleEngine");
+      return;
+    }
 
+    BattleEngine.activeMatches.delete(matchId);
+
+    console.log("Attempting to save history via RewardService...");
     await RewardService.updatePlayerStats(results); 
     
     // This sends the official winnerId, p1 score, and p2 score to everyone

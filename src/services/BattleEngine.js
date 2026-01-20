@@ -4,15 +4,17 @@ class BattleEngine {
     this.activeMatches = new Map();
   }
 
-  initializeMatch(matchId, p1Id, p2Id, quizData) {
+
+  initializeMatch(matchId, p1Id, p2Id, quizData, category) { // 1. Accept category
     this.activeMatches.set(matchId, {
         players: {
             [p1Id.toString()]: { score: 0 },
             [p2Id.toString()]: { score: 0 }
         },
-        quizData
+        quizData,
+        category // 2. Store category
     });
-  }
+}
 
   // services/BattleEngine.js
   processSubmission(matchId, userId, isCorrect, timeTaken) {
@@ -58,7 +60,8 @@ class BattleEngine {
     return {
         winnerId,
         p1: { id: playerIds[0], score: p1.score },
-        p2: { id: playerIds[1], score: p2.score }
+        p2: { id: playerIds[1], score: p2.score },
+        category: match.category
     };
   }
 }

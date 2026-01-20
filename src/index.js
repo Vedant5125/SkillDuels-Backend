@@ -12,7 +12,7 @@ const server = http.createServer(app);
 // 2. Initialize Socket.io
 const io = new Server(server, {
     cors: {
-        origin: process.env.CORS_ORIGIN,
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
         credentials: true
     }
 });

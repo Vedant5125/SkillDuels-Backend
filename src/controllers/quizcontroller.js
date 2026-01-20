@@ -4,16 +4,16 @@ import Quiz from '../models/quiz.model.js'; //
 // @route   POST /api/admin/questions
 export const addQuestion = async (req, res) => {
     try {
-        const { category, questionText, options, correctAnswer, difficulty } = req.body;
+        const { category, question, options, correctAnswer, difficulty } = req.body;
 
         // Validation: Ensure correctAnswer is one of the options
         if (!options.includes(correctAnswer)) {
             return res.status(400).json({ message: "Correct answer must match one of the options." });
         }
 
-        const question = await Quiz.create({
+        const newQuestion = await Quiz.create({
             category,
-            questionText,
+            question,
             options,
             correctAnswer,
             difficulty

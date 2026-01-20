@@ -2,6 +2,7 @@
 import BattleEngine from '../services/BattleEngine.js';
 import QueueManager from '../services/QueueManager.js';
 import Quiz from '../models/quiz.model.js';
+import RewardService from '../services/RewardService.js';
 
 export default (io, socket) => {
   // 1. joinQueue: User enters a category pool
@@ -12,7 +13,9 @@ export default (io, socket) => {
 
     // 2. Safely extract data
     const category = data?.category;
-    const userId = data?.userId || socket.userId;
+    // const userId = data?.userId || socket.userId;
+    const userId = (data?.userId || socket.userId)?.toString();
+    socket.userId = userId;
 
     if (!category || !userId) {
       console.log(`Missing Data - Category: ${category}, User: ${userId}`);
@@ -37,8 +40,8 @@ export default (io, socket) => {
 
       // 2. Fetch quiz data (ensure category matches your DB)
       const quizData = await Quiz.find({ category }).limit(20);
+      console.log(`Battle Ready: ${matchId} | Category: ${category} | Questions: ${quizData.length}`);
       
-      console.log(`Sending matchFound to room ${matchId} with ${quizData.length} questions`);
 
       // 3. Emit the event to the entire room (Both Players)
       io.to(matchId).emit('matchFound', { 
@@ -48,30 +51,31 @@ export default (io, socket) => {
       });
 
       // 4. Initialize the engine for scoring
-      BattleEngine.initializeMatch(matchId, userId, opponent.userId, quizData);
+      BattleEngine.initializeMatch(matchId, userId, opponent.userId.toString(), quizData);
     }
   });
 
-  // 4. submitAnswer: Server calculates accuracy and speed
   socket.on('submitAnswer', ({ matchId, isCorrect, timeTaken }) => {
-    const result = BattleEngine.processSubmission(matchId, socket.userId, isCorrect, timeTaken);
-    
-    if (result) {
-      // 5. liveUpdate: Push score to the opponent
-      io.to(result.opponentId).emit('liveUpdate', { 
-        opponentScore: result.currentScore 
-      });
-    }
+      const userId = socket.userId?.toString();
+      const result = BattleEngine.processSubmission(matchId, userId, isCorrect, timeTaken);
+      
+      if (result) {
+          // We emit to the whole room so everyone gets the update
+          io.to(matchId).emit('liveUpdate', { 
+              playerId: userId, // The person who just answered
+              score: result.currentScore 
+          });
+      }
   });
 
   // 6. endMatch: Declare winner and award badges/XP
   socket.on('endMatch', async ({ matchId }) => {
     const results = BattleEngine.getFinalResults(matchId);
-    
-    // Reward logic persists to MongoDB
+    if (!results) return;
+
     await RewardService.updatePlayerStats(results); 
     
-    io.to(matchId).emit('endMatch', results);
-    BattleEngine.activeMatches.delete(matchId);
+    // This sends the official winnerId, p1 score, and p2 score to everyone
+    io.to(matchId).emit('matchEnded', results); 
   });
 };

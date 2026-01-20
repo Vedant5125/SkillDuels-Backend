@@ -6,23 +6,33 @@ class BattleEngine {
 
   initializeMatch(matchId, p1Id, p2Id, quizData) {
     this.activeMatches.set(matchId, {
-      players: {
-        [p1Id]: { score: 0, completed: false },
-        [p2Id]: { score: 0, completed: false }
-      },
-      quizData,
-      startTime: Date.now()
+        players: {
+            [p1Id.toString()]: { score: 0 },
+            [p2Id.toString()]: { score: 0 }
+        },
+        quizData
     });
   }
 
+  // services/BattleEngine.js
   processSubmission(matchId, userId, isCorrect, timeTaken) {
     const match = this.activeMatches.get(matchId);
-    if (!match) return null;
+    if (!match) {
+        console.error(`Match ${matchId} not found`);
+        return null;
+    }
 
     const player = match.players[userId];
+    if (!player) {
+        console.error(`User ${userId} not found in match ${matchId}. Available:`, Object.keys(match.players));
+        return null;
+    }
+
     if (isCorrect) {
-      const speedBonus = Math.max(0, 10 - (timeTaken / 1000));
-      player.score += Math.round(10 + speedBonus); 
+        // timeTaken comes from frontend as (15 - timeLeft) * 1000
+        // We normalize speedBonus based on your 10-second logic
+        const speedBonus = Math.max(0, 10 - (timeTaken / 1000));
+        player.score += Math.round(10 + speedBonus); 
     }
     
     return { 
@@ -54,3 +64,4 @@ class BattleEngine {
 }
 
 export default new BattleEngine();
+
